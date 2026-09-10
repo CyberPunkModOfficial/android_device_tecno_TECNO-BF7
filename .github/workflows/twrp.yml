@@ -122,8 +122,8 @@ jobs:
         cd android-recovery
         git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
         cd ${{ github.event.inputs.DEVICE_PATH }}
-        --all "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
+        echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        
     - name: Extract Proprietary Files
       run: |
         cd android-recovery/${{ github.event.inputs.DEVICE_PATH }}
