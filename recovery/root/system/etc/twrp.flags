@@ -35,6 +35,7 @@
 /seccfg emmc /dev/block/by-name/seccfg flags=display="SecCfg";backup=1
 /misc emmc /dev/block/by-name/para flags=display="Misc";backup=1
 /nvram emmc /dev/block/by-name/nvram flags=display="NvRam";backup=1;flashimg=1
+/nvdata ext4 /dev/block/by-name/nvdata flags=display="NvData";backup=1;flashimg=1
 /proinfo emmc /dev/block/by-name/proinfo flags=display="Proinfo";backup=1
 
 # Protect (SIM related)
