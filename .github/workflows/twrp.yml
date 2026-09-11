@@ -131,6 +131,20 @@ jobs:
       # was incomplete but the job kept going anyway.
       continue-on-error: false
 
+    - name: Ensure vendor/twrp exists
+      run: |
+          set -e
+          cd android-recovery
+          if [ ! -f vendor/twrp/build/tools/extract_utils.sh ]; then
+            echo "vendor/twrp missing after repo sync — cloning it directly"
+            rm -rf vendor/twrp
+            mkdir -p vendor
+            git clone https://github.com/TeamWin/android_vendor_twrp -b android-12.1 vendor/twrp
+          else
+            echo "vendor/twrp already present, skipping"
+          fi
+        continue-on-error: false
+
     - name: Clone Device Tree
       run: |
         set -e
