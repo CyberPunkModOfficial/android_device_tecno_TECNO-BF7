@@ -29,10 +29,6 @@ on:
         description: 'Specify your Device Codename'
         required: true
         default: 'BF7'
-      DEVICE_MAKEFILE:
-        description: 'Specify what is the beginning of the makefile'
-        required: true
-        default: 'twrp_bf7'
       BUILD_TARGET:
         description: 'Specify your Build Target'
         required: true
