@@ -84,6 +84,7 @@ jobs:
             gperf gcc-multilib g++-multilib libc6-dev lib32ncurses-dev libx11-dev tree lib32z-dev libgl1-mesa-dev libxml2-utils \
             xsltproc bc ccache liblz4-tool libncurses-dev libsdl1.2-dev build-essential libgtk-3-dev freeglut3-dev git lzop pngcrush schedtool squashfs-tools \
             imagemagick libbz2-dev lzma ncftp qemu-user-static python3 tar
+      # Package installs can be flaky on the shared runner image; not critical enough to fail the whole job.
       continue-on-error: true
 
     - name: Install OpenJDK
@@ -108,40 +109,49 @@ jobs:
          else
            echo "value=https://github.com/sounddrill31/platform_manifest_twrp_omni.git" >> "$GITHUB_OUTPUT"
          fi
-      continue-on-error: true
+      # This step just computes a string; safe to leave, but no reason to hide a real failure either.
+      continue-on-error: false
 
     - name: Initialize Repo
       run: |
+        set -e
         mkdir android-recovery
         cd android-recovery
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         repo init --depth=1 -u ${{ steps.manifest.outputs.value }} -b ${{ github.event.inputs.MANIFEST_BRANCH }}
         sed -i '/<remove-project name="platform\/external\/gflags"  \/>/d' .repo/manifests/remove-minimal.xml
-      continue-on-error: true
+      # This must succeed or nothing downstream has a valid manifest to sync.
+      continue-on-error: false
 
     - name: Repo Sync
       run: |
+           set -e
            cd android-recovery
-           repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
            repo sync -j$(nproc --all) --force-sync
-      continue-on-error: true
+      # IMPORTANT: no longer masked. A partial/failed sync (network, timeout, disk space,
+      # a bad project in the manifest) needs to actually fail the job here — that's what
+      # was causing "extract_utils.sh: No such file or directory" further down: the tree
+      # was incomplete but the job kept going anyway.
+      continue-on-error: false
 
     - name: Clone Device Tree
       run: |
+        set -e
         cd android-recovery
         git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
         cd ${{ github.event.inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-      continue-on-error: true
+      continue-on-error: false
 
     - name: Extract Proprietary Files
       run: |
+        set -e
         cd android-recovery/${{ github.event.inputs.DEVICE_PATH }}
         chmod +x extract-files.sh setup-makefiles.sh
         ./extract-files.sh
         ./setup-makefiles.sh
-      continue-on-error: true
+      continue-on-error: false
 
     - name: Check Build Makefile
       run: |
@@ -152,15 +162,25 @@ jobs:
             echo "DEVICE_MAKEFILE=omni_${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
         else
             echo "No recovery makefile file found!"
-      continue-on-error: true
+            exit 1
+        fi
+      # Was missing its closing 'fi' -> bash syntax error -> DEVICE_MAKEFILE never set ->
+      # "Invalid lunch combo: -eng" later. Fixed, and now exits non-zero if no makefile
+      # is found instead of silently continuing with an empty variable.
+      continue-on-error: false
 
     - name: Building Image
       run: |
+        set -e -o pipefail
         cd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ env.DEVICE_MAKEFILE }}-eng && make clean && make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
+        lunch ${{ env.DEVICE_MAKEFILE }}-eng
+        make clean
+        make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
+      # set -e means a failed lunch/make now actually fails this step instead of falling
+      # through to the "Done building" echo and reporting a false success.
       continue-on-error: false
 
     - name: Set Build Date
