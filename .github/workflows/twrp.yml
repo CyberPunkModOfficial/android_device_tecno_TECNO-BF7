@@ -29,10 +29,14 @@ on:
         description: 'Specify your Device Codename'
         required: true
         default: 'BF7'
+      DEVICE_MAKEFILE:
+        description: 'Specify what is the beginning of the makefile'
+        required: true
+        default: 'twrp_bf7'
       BUILD_TARGET:
         description: 'Specify your Build Target'
         required: true
-        default: 'recovery'
+        default: 'boot'
         type: choice
         options:
         - boot
@@ -118,8 +122,9 @@ jobs:
 
     - name: Repo Sync
       run: |
-        cd android-recovery
-        repo sync -j$(nproc --all) --force-sync
+           cd android-recovery
+           repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
+           repo sync -j$(nproc --all) --force-sync
       continue-on-error: true
 
     - name: Clone Device Tree
@@ -127,7 +132,6 @@ jobs:
         cd android-recovery
         git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
         cd ${{ github.event.inputs.DEVICE_PATH }}
-        chmod +x recovery/root/sbin/fsck.f2fs
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
       continue-on-error: true
 
