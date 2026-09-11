@@ -122,28 +122,26 @@ jobs:
 
     - name: Repo Sync
       run: |
-           set -e
-           cd android-recovery
-           repo sync -j$(nproc --all) --force-sync
+        set -e
+        cd android-recovery
+        repo sync -j$(nproc --all) --force-sync
       # IMPORTANT: no longer masked. A partial/failed sync (network, timeout, disk space,
-      # a bad project in the manifest) needs to actually fail the job here — that's what
-      # was causing "extract_utils.sh: No such file or directory" further down: the tree
-      # was incomplete but the job kept going anyway.
+      # a bad project in the manifest) needs to actually fail the job here.
       continue-on-error: false
 
     - name: Ensure vendor/twrp exists
       run: |
-          set -e
-          cd android-recovery
-          if [ ! -f vendor/twrp/build/tools/extract_utils.sh ]; then
-            echo "vendor/twrp missing after repo sync — cloning it directly"
-            rm -rf vendor/twrp
-            mkdir -p vendor
-            git clone https://github.com/TeamWin/android_vendor_twrp -b android-12.1 vendor/twrp
-          else
-            echo "vendor/twrp already present, skipping"
-          fi
-        continue-on-error: false
+        set -e
+        cd android-recovery
+        if [ ! -f vendor/twrp/build/tools/extract_utils.sh ]; then
+          echo "vendor/twrp missing after repo sync — cloning it directly"
+          rm -rf vendor/twrp
+          mkdir -p vendor
+          git clone https://github.com/TeamWin/android_vendor_twrp -b android-12.1 vendor/twrp
+        else
+          echo "vendor/twrp already present, skipping"
+        fi
+      continue-on-error: false
 
     - name: Clone Device Tree
       run: |
@@ -165,6 +163,7 @@ jobs:
 
     - name: Check Build Makefile
       run: |
+        set -e
         cd android-recovery
         if [ -f ${{ github.event.inputs.DEVICE_PATH }}/twrp_${{ github.event.inputs.DEVICE_NAME}}.mk ]; then
             echo "DEVICE_MAKEFILE=twrp_bf7" >> $GITHUB_ENV
@@ -174,10 +173,7 @@ jobs:
             echo "No recovery makefile file found!"
             exit 1
         fi
-      # Was missing its closing 'fi' -> bash syntax error -> DEVICE_MAKEFILE never set ->
-      # "Invalid lunch combo: -eng" later. Fixed, and now exits non-zero if no makefile
-      # is found instead of silently continuing with an empty variable.
-      continue-on-error: true
+      continue-on-error: false
 
     - name: Building Image
       run: |
@@ -189,8 +185,6 @@ jobs:
         make clean
         make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
-      # set -e means a failed lunch/make now actually fails this step instead of falling
-      # through to the "Done building" echo and reporting a false success.
       continue-on-error: false
 
     - name: Set Build Date
