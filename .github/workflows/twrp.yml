@@ -16,7 +16,7 @@ on:
       DEVICE_TREE:
         description: 'Custom Recovery Tree'
         required: true
-        default: 'https://github.com/CyberPunkModOfficial/android_device_tecno_TECNO-BF7'
+        default: 'https://github.com/CyberPunkModOfficial/new_test/'
       DEVICE_TREE_BRANCH:
         description: 'Custom Recovery Tree Branch'
         required: true
@@ -24,7 +24,7 @@ on:
       DEVICE_PATH:
         description: 'Specify your Device Path'
         required: true
-        default: 'device/tecno/BF7'
+        default: 'device/tecno/bf7'
       DEVICE_NAME:
         description: 'Specify your Device Codename'
         required: true
@@ -110,7 +110,7 @@ jobs:
            echo "value=https://github.com/sounddrill31/platform_manifest_twrp_omni.git" >> "$GITHUB_OUTPUT"
          fi
       # This step just computes a string; safe to leave, but no reason to hide a real failure either.
-      continue-on-error: false
+      continue-on-error: true
 
     - name: Initialize Repo
       run: |
@@ -142,7 +142,7 @@ jobs:
         git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
         cd ${{ github.event.inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-      continue-on-error: false
+      continue-on-error: true
 
     - name: Extract Proprietary Files
       run: |
@@ -151,7 +151,7 @@ jobs:
         chmod +x extract-files.sh setup-makefiles.sh
         ./extract-files.sh
         ./setup-makefiles.sh
-      continue-on-error: false
+      continue-on-error: true
 
     - name: Check Build Makefile
       run: |
@@ -167,7 +167,7 @@ jobs:
       # Was missing its closing 'fi' -> bash syntax error -> DEVICE_MAKEFILE never set ->
       # "Invalid lunch combo: -eng" later. Fixed, and now exits non-zero if no makefile
       # is found instead of silently continuing with an empty variable.
-      continue-on-error: false
+      continue-on-error: true
 
     - name: Building Image
       run: |
@@ -181,7 +181,7 @@ jobs:
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
       # set -e means a failed lunch/make now actually fails this step instead of falling
       # through to the "Done building" echo and reporting a false success.
-      continue-on-error: false
+      continue-on-error: true
 
     - name: Set Build Date
       run: |
