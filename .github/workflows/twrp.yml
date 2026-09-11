@@ -16,7 +16,7 @@ on:
       DEVICE_TREE:
         description: 'Custom Recovery Tree'
         required: true
-        default: 'https://github.com/CyberPunkModOfficial/new_test/'
+        default: 'https://github.com/CyberPunkModOfficial/android_device_tecno_TECNO-BF7'
       DEVICE_TREE_BRANCH:
         description: 'Custom Recovery Tree Branch'
         required: true
@@ -170,7 +170,7 @@ jobs:
         set -e
         cd android-recovery
         if [ -f ${{ github.event.inputs.DEVICE_PATH }}/twrp_${{ github.event.inputs.DEVICE_NAME}}.mk ]; then
-            echo "DEVICE_MAKEFILE=twrp_bf7.mk" >> $GITHUB_ENV
+            echo "DEVICE_MAKEFILE=twrp_BF7.mk" >> $GITHUB_ENV
         elif [ -f ${{ github.event.inputs.DEVICE_PATH }}/omni_${{ github.event.inputs.DEVICE_NAME}}.mk ]; then
             echo "DEVICE_MAKEFILE=omni_bf7" >> $GITHUB_ENV
         else
@@ -185,7 +185,7 @@ jobs:
         cd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch twrp_bf7-eng
+        lunch twrp_BF7-eng
         make clean
         make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
